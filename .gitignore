@@ -4,3 +4,5 @@ dist
 build
 data
 models
+metrics
+predictions
