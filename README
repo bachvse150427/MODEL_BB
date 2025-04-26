@@ -1,0 +1,9 @@
+conda create  -p venv python==3.12
+
+conda activate D:\CAP_111\CAP_BB\MODEL_LOCATION_V1\venv
+
+python setup.py install
+
+python main.py
+
+python main.py --skip-optimizer

@@ -1,0 +1,7 @@
+README
+setup.py
+ApiUDStockPredictions.egg-info/PKG-INFO
+ApiUDStockPredictions.egg-info/SOURCES.txt
+ApiUDStockPredictions.egg-info/dependency_links.txt
+ApiUDStockPredictions.egg-info/requires.txt
+ApiUDStockPredictions.egg-info/top_level.txt
