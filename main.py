@@ -57,12 +57,17 @@ def main():
         log_message("Model training failed, stopping pipeline")
         return False
     
-    # Step 3: Run merge_predictions.py
+    # Step 3: Run predictor.py
+    if not run_script("predictor.py", "model prediction"):
+        log_message("Model training failed, stopping pipeline")
+        return False
+    
+    # Step 4: Run merge_predictions.py
     if not run_script("merge_predictions.py", "prediction merging"):
         log_message("Prediction merging failed, stopping pipeline")
         return False
     
-    # Step 4: Run push_mongo_data.py
+    # Step 5: Run push_mongo_data.py
     if not run_script("push_mongo_data.py", "database upload"):
         log_message("Database upload failed, stopping pipeline")
         return False
