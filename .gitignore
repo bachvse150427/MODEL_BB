@@ -6,3 +6,5 @@ data
 models
 metrics
 predictions
+logs
+inferences

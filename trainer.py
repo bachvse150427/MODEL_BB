@@ -26,7 +26,6 @@ class ModelTrainer:
         }
         self.timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         self._setup_logging()
-        self.predictions = {}
         
     def _setup_logging(self):
         log_dir = 'logs/training'
@@ -58,7 +57,7 @@ class ModelTrainer:
             self.logger.error(f"Error loading parameters for {ticker}: {str(e)}")
             return None
 
-    def train_and_evaluate_model(self, model_name, params, X_train, y_train, X_valid=None, y_valid=None, X_test=None, y_test=None, input_shape=None, num_classes=None):
+    def train_and_evaluate_model(self, model_name, params, X_train, y_train, X_valid=None, y_valid=None, input_shape=None, num_classes=None):
         if params is None:
             self.logger.warning(f"Skipping {model_name} due to missing parameters")
             return None, None
@@ -337,21 +336,7 @@ class ModelTrainer:
                 
                 self.logger.info("\nValidation Classification Report:")
                 evaluator.print_classification_report(y_valid, y_valid_pred)
-                
-            if X_test is not None and y_test is not None:
-                self.logger.info("\n=== Test Set Evaluation ===")
-                y_test_pred = model.predict(X_test)
-                
-                test_metrics = evaluator.evaluate(y_test, y_test_pred)
-                self.logger.info("\nTest Metrics:")
-                for metric, value in test_metrics.items():
-                    self.logger.info(f"{metric.capitalize()}: {value:.4f}")
-                
-                model_metrics['test'] = test_metrics
-                
-                self.logger.info("\nTest Classification Report:")
-                evaluator.print_classification_report(y_test, y_test_pred)
-                
+            
             training_time = time.time() - start_time
             self.logger.info(f"\nTraining completed in {training_time:.2f} seconds")
             
@@ -389,123 +374,9 @@ class ModelTrainer:
         except Exception as e:
             self.logger.error(f"Error saving model to {save_path}: {str(e)}", exc_info=True)
 
-    def predict_test_data(self, model, X_test, ticker, model_name):
-        try:
-            if model is None:
-                self.logger.warning(f"No model available for {ticker} - {model_name}")
-                return None
-                
-            self.logger.info(f"Making predictions for {ticker} using {model_name}")
-            self.logger.info(f"Test data shape: {X_test.shape}")
-            
-            start_time = time.time()
-            y_pred = model.predict(X_test)
-            
-            try:
-                y_prob = model.predict_proba(X_test)
-                self.logger.info(f"Probability predictions shape: {y_prob.shape}")
-            except:
-                self.logger.warning(f"Probability predictions not available for {model_name}")
-                y_prob = None
-            
-            prediction_time = time.time() - start_time
-            self.logger.info(f"Predictions completed in {prediction_time:.2f} seconds")
-            self.logger.info(f"Number of predictions: {len(y_pred)}")
-            
-            unique_preds, pred_counts = np.unique(y_pred, return_counts=True)
-            pred_dist = dict(zip(map(str, unique_preds), map(int, pred_counts)))
-            self.logger.info(f"Prediction distribution: {json.dumps(pred_dist, indent=2)}")
-            
-            return {
-                'predictions': y_pred,
-                'probabilities': y_prob
-            }
-            
-        except Exception as e:
-            self.logger.error(f"Error predicting with {model_name} for {ticker}: {str(e)}")
-            return None
-            
-    def save_predictions(self, predictions, ticker, data):
-        try:
-            save_dir = os.path.join('predictions', self.timestamp)
-            os.makedirs(save_dir, exist_ok=True)
-            self.logger.info(f"Created/verified predictions directory: {save_dir}")
-            
-            test_dates = data['test_dates']
-            y_test = data['y_test']
-            
-            self.logger.info(f"Test dates length: {len(test_dates)}")
-            self.logger.info(f"Test labels length: {len(y_test)}")
-            
-            results = []
-            best_f1 = -1
-            best_model = None
-            evaluator = ModelEvaluation()
-            
-            for model_name, pred_data in predictions.items():
-                if pred_data is not None:
-                    y_pred = pred_data['predictions']
-                    metrics = evaluator.evaluate(y_test, y_pred)
-                    current_f1 = metrics['f1']
-                    
-                    if current_f1 > best_f1:
-                        best_f1 = current_f1
-                        best_model = model_name
-            if best_model is not None:
-                pred_data = predictions[best_model]
-                for idx, pred in enumerate(pred_data['predictions']):
-                    result = {
-                        'Ticker': ticker,
-                        'Model': best_model,
-                        'Index': idx,
-                        'Actual': y_test[idx],
-                        'Prediction': pred,
-                        'Month-Year': test_dates[idx]
-                    }
-                    
-                    if pred_data['probabilities'] is not None:
-                        probs = pred_data['probabilities'][idx]
-                        for i, prob in enumerate(probs):
-                            result[f'Prob_Class_{i}'] = prob
-                    
-                    results.append(result)
-            
-            if results:
-                df = pd.DataFrame(results)
-                self.logger.info(f"Created DataFrame with shape: {df.shape}")
-                
-                cols = ['Ticker', 'Model', 'Month-Year', 'Index', 'Actual', 'Prediction']
-                prob_cols = [col for col in df.columns if col.startswith('Prob_Class_')]
-                cols.extend(prob_cols)
-                
-                df = df[cols]
-                
-                df['Correct'] = (df['Actual'] == df['Prediction']).astype(int)
-                
-                # Tính accuracy cho model tốt nhất
-                accuracy = (df['Correct'].sum() / len(df)) * 100
-                self.logger.info(f"Best model ({best_model}) - F1 Score: {best_f1:.4f}, Accuracy: {accuracy:.2f}%")
-                
-                save_path = os.path.join(save_dir, f'predictions_{ticker}.csv')
-                self.logger.info(f"Attempting to save predictions for best model to: {save_path}")
-                
-                df.to_csv(save_path, index=False)
-                
-                self.logger.info(f"Successfully saved predictions to {save_path}")
-                self.logger.info(f"File size: {os.path.getsize(save_path) / 1024:.2f} KB")
-                self.logger.info(f"Columns in saved file: {', '.join(df.columns)}")
-                return df
-            else:
-                self.logger.warning(f"No predictions to save for {ticker}")
-                return None
-                
-        except Exception as e:
-            self.logger.error(f"Error saving predictions for {ticker}: {str(e)}")
-            return None
-
     def save_metrics_by_ticker(self, ticker, metrics_data):
         try:
-            metrics_dir = os.path.join('metrics', self.timestamp)
+            metrics_dir = os.path.join('metrics', 'training', self.timestamp)
             os.makedirs(metrics_dir, exist_ok=True)
             self.logger.info(f"Created/verified metrics directory: {metrics_dir}")
             
@@ -633,7 +504,6 @@ def train_single_ticker(ticker, df, trainer):
     num_classes = len(np.unique(y_train))
     
     try:
-        ticker_predictions = {}
         ticker_metrics = {}
         
         for model_name in ['svm', 'logistic_regression', 'lstm', 'transformer']:
@@ -641,9 +511,7 @@ def train_single_ticker(ticker, df, trainer):
             
             X_train = X_train_3d if model_name in ['lstm', 'transformer'] else X_train_2d
             X_valid = data['X_valid_3d'] if model_name in ['lstm', 'transformer'] else data['X_valid_2d']
-            X_test = data['X_test_3d'] if model_name in ['lstm', 'transformer'] else data['X_test_2d']
             y_valid = data['y_valid']
-            y_test = data['y_test']
             
             model_params = best_params.get(model_name)
             
@@ -658,8 +526,6 @@ def train_single_ticker(ticker, df, trainer):
                 y_train=y_train,
                 X_valid=X_valid, 
                 y_valid=y_valid,
-                X_test=X_test,
-                y_test=y_test,
                 input_shape=(X_train_3d.shape[1], X_train_3d.shape[2]) if model_name in ['lstm', 'transformer'] else None,
                 num_classes=num_classes if model_name in ['lstm', 'transformer'] else None
             )
@@ -667,16 +533,11 @@ def train_single_ticker(ticker, df, trainer):
             if model_metrics is not None:
                 ticker_metrics[model_name] = model_metrics
             
-            predictions = trainer.predict_test_data(model, X_test, ticker, model_name)
-            if predictions is not None:
-                ticker_predictions[model_name] = predictions
-            
             trainer.save_model(model, ticker, model_name)
         
-        trainer.save_predictions(ticker_predictions, ticker, data)
         trainer.save_metrics_by_ticker(ticker, ticker_metrics)
         
-        trainer.logger.info(f"\nAll models trained, predictions and metrics saved for {ticker}")
+        trainer.logger.info(f"\nAll models trained and metrics saved for {ticker}")
         return True
         
     except Exception as e:

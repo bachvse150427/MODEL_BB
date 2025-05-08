@@ -4,6 +4,8 @@ numpy
 pymongo
 certifi
 psutil
+fastapi
+uvicorn
 pymongo[srv]>=4.5.0,<4.6
 scikit-learn>=1.3.0
 torch>=2.2.0
