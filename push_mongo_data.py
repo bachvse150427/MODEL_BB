@@ -51,7 +51,7 @@ class NetworkDataExtract():
 
     def get_latest_prediction_folder(self):
         try:
-            predictions_dir = "predictions"
+            predictions_dir = "inferences"
             folders = [f for f in os.listdir(predictions_dir) if os.path.isdir(os.path.join(predictions_dir, f))]
             latest_folder = max(folders, key=lambda x: os.path.getctime(os.path.join(predictions_dir, x)))
             return latest_folder
@@ -61,7 +61,7 @@ class NetworkDataExtract():
 if __name__=='__main__':
     networkobj = NetworkDataExtract()
     latest_folder = networkobj.get_latest_prediction_folder()
-    FILE_PATH = f"predictions/{latest_folder}/merged_predictions.csv"
+    FILE_PATH = f"inferences/{latest_folder}/all_last_points.csv"
     DATABASE = "BACHV_BB_STOCKS"
     current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
     Collection = f"Net_Data_{current_time}"

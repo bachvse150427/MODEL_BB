@@ -9,13 +9,14 @@ def log_message(message):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     print(f"[{timestamp}] {message}")
 
-def run_script(script_name, description):
+def run_script(script_name, description, *args):
     log_message(f"Starting {description}...")
     start_time = time.time()
     
     try:
+        cmd = [sys.executable, script_name] + list(args)
         result = subprocess.run(
-            [sys.executable, script_name],
+            cmd,
             check=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -38,6 +39,8 @@ def run_script(script_name, description):
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Stock market prediction pipeline")
     parser.add_argument("--skip-optimizer", action="store_true", help="Skip the model optimization step")
+    parser.add_argument("--skip-training", action="store_true", help="Skip the model training step")
+    parser.add_argument("--skip-predictor", action="store_true", help="Skip the model prediction step")
     return parser.parse_args()
 
 def main():
@@ -53,18 +56,25 @@ def main():
             return False
     
     # Step 2: Run trainer.py
-    if not run_script("trainer.py", "model training"):
-        log_message("Model training failed, stopping pipeline")
-        return False
+    if args.skip_training:
+        log_message("Skipping model training as requested")
+    else:
+        if not run_script("trainer.py", "model training"):
+            log_message("Model training failed, stopping pipeline")
+            return False
     
     # Step 3: Run predictor.py
-    if not run_script("predictor.py", "model prediction"):
-        log_message("Model training failed, stopping pipeline")
-        return False
+    if args.skip_predictor:
+        log_message("Skipping model prediction as requested")
+    else:
+        if not run_script("predictor.py", "model prediction"):
+            log_message("Model prediction failed, stopping pipeline")
+            return False
     
-    # Step 4: Run merge_predictions.py
-    if not run_script("merge_predictions.py", "prediction merging"):
-        log_message("Prediction merging failed, stopping pipeline")
+    # Step 4: Run inferencer.py with --all-tickers-all-data flag
+    log_message("Starting inference for all data points of all tickers")
+    if not run_script("inferencer.py", "model inference", "--all"):
+        log_message("Model inference failed, stopping pipeline")
         return False
     
     # Step 5: Run push_mongo_data.py

@@ -171,6 +171,9 @@ class ModelOptimizer:
                                                         LSTM_PARAM_RANGES['weight_decay'][0], 
                                                         LSTM_PARAM_RANGES['weight_decay'][1],
                                                         log=True),
+                    'fc_size': trial.suggest_int('fc_size',
+                                             LSTM_PARAM_RANGES['fc_size'][0],
+                                             LSTM_PARAM_RANGES['fc_size'][1]),
                     'epochs': LSTM_EPOCHS_OPTIMIZED
                 }
                 
@@ -186,7 +189,8 @@ class ModelOptimizer:
                     hidden_size=params['hidden_size'],
                     num_layers=params['num_layers'],
                     num_classes=num_classes,
-                    dropout=params['dropout']
+                    dropout=params['dropout'],
+                    fc_size=params['fc_size']
                 ).to(DEVICE)
                 
                 model.optimizer = torch.optim.Adam(model.model.parameters(), lr=params['learning_rate'])
@@ -346,7 +350,10 @@ class ModelOptimizer:
                     'weight_decay': trial.suggest_float('weight_decay', 
                                                         TRANSFORMER_PARAM_RANGES['weight_decay'][0], 
                                                         TRANSFORMER_PARAM_RANGES['weight_decay'][1],
-                                                        log=True)
+                                                        log=True),
+                    'fc_size': trial.suggest_int('fc_size',
+                                             TRANSFORMER_PARAM_RANGES['fc_size'][0],
+                                             TRANSFORMER_PARAM_RANGES['fc_size'][1]),
                 }
                 
                 nhead = params['nhead']
@@ -373,6 +380,7 @@ class ModelOptimizer:
                     num_classes=num_classes,
                     dim_feedforward=2 * params['d_model'],
                     dropout=params['dropout'],
+                    fc_size=params['fc_size'],
                     max_seq_length=input_shape[0]
                 ).to(DEVICE)
                 

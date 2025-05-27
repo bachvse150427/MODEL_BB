@@ -1,4 +1,4 @@
-Metadata-Version: 2.2
+Metadata-Version: 2.4
 Name: ApiUDStockPredictions
 Version: 0.0.1
 Author: Bac Hoang
@@ -9,6 +9,8 @@ Requires-Dist: numpy
 Requires-Dist: pymongo
 Requires-Dist: certifi
 Requires-Dist: psutil
+Requires-Dist: fastapi
+Requires-Dist: uvicorn
 Requires-Dist: pymongo[srv]<4.6,>=4.5.0
 Requires-Dist: scikit-learn>=1.3.0
 Requires-Dist: torch>=2.2.0

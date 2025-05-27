@@ -1,26 +1,21 @@
 conda create  -p venv python==3.12
 
-conda activate "D:\CAP_FPT\2. CODE\2. Module 1 design\1. Hoang van Bac\BB\venv"
+conda activate E:\BB\MODEL_BB_origin\venv
 
 
 python setup.py install
 
-python main11.py
+python main.py
 
-python main1.py --skip-optimizer
+python main.py --skip-optimizer
+python main.py --skip-optimizer --skip-training
 
 
 
-python inference.py:
-python inference.py --ticker VNM
-python inference.py --all
-python inference.py --ticker VNM --csv path/to/custom_data.csv
+python inferencer.py:
+
+python inferencer.py --all
+
 
 python app.py
 http://localhost:8080/docs
-
-http://localhost:8080/predict/{ticker}
-
-http://localhost:8080/available-tickers
-
-http://localhost:8080/models/{ticker}

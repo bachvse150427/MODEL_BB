@@ -47,9 +47,7 @@ class LSTMNet(nn.Module):
         )
         
         self.dropout = nn.Dropout(dropout)
-        self.fc1 = nn.Linear(hidden_size, 64)
-        self.relu = nn.ReLU()
-        self.fc2 = nn.Linear(64, num_classes) # =2 PHÂN LOẠI NHỊ PHÂN
+        self.fc = nn.Linear(hidden_size, num_classes)
     
     def forward(self, x):
         h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(x.device)
@@ -59,10 +57,7 @@ class LSTMNet(nn.Module):
         
         out = out[:, -1, :]
         out = self.dropout(out)
-        out = self.fc1(out)
-        out = self.relu(out)
-        out = self.dropout(out)
-        out = self.fc2(out)
+        out = self.fc(out)
         return out
 
 class LSTMModel(BaseModel):
@@ -255,9 +250,7 @@ class TimeSeriesTransformer(nn.Module):
         self.transformer_encoder = nn.TransformerEncoder(encoder_layers, num_layers)
         
         self.dropout = nn.Dropout(dropout)
-        self.fc1 = nn.Linear(d_model, 64)
-        self.relu = nn.ReLU()
-        self.fc2 = nn.Linear(64, num_classes)
+        self.fc = nn.Linear(d_model, num_classes)
     
     def forward(self, x):
         x = self.input_projection(x)
@@ -265,10 +258,7 @@ class TimeSeriesTransformer(nn.Module):
         encoded = self.transformer_encoder(x)
         out = encoded[:, -1, :]
         out = self.dropout(out)
-        out = self.fc1(out)
-        out = self.relu(out)
-        out = self.dropout(out)
-        out = self.fc2(out)
+        out = self.fc(out)
         return out
 
 class LearnablePositionalEncoding(nn.Module):
